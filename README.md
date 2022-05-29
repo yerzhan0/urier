@@ -1,2 +1,2 @@
 # yerzhan0/urier
-IoC for my home server
+IaC for my home server
