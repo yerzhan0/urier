@@ -1,0 +1,5 @@
+- name: Read devices information
+  community.general.parted: device=/dev/{{item}} unit=MiB
+  register: sd_info
+  loop: 
+    "{{ hostvars[inventory_hostname]['ansible_devices'].keys() | select('match','sd[a-z]') }}"

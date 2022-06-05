@@ -1,0 +1,44 @@
+- name: Read devices information
+  include_tasks:
+    read_sd_devices.yml
+
+- name: Check the required ext4 filesystem
+  community.general.filesystem:
+    fstype: ext4
+    dev: '{{ item.disk.dev }}1'
+    state: present
+  ignore_errors: true
+  register: _partitioned_correctly
+  when:
+    - "'boot' not in (item.partitions | map(attribute='flags') | flatten)"
+  loop: "{{ sd_info.results }}"
+
+- name: Partition non boot disks
+  include_tasks:
+    create_partitions.yml
+  when: 
+    (_partitioned_correctly is changed) or
+    (_partitioned_correctly is failed)
+
+- name: Echo current partition label
+  shell:
+    lsblk -o name,label | grep '{{ item.0.disk.dev[5:] }}{{ item.1.num }}' | grep -o '[^ ]*$' 
+  register: cmd
+  changed_when: false
+  when:
+    - "'boot' not in (item.0.partitions | map(attribute='flags') | flatten)"
+  loop: "{{ sd_info.results | subelements('partitions') }}"
+  loop_control:
+    index_var: index
+
+- name: Label created partitions
+  shell: e2label {{ item.0.0.disk.dev }}{{ item.0.1.num }} DataStorage{{ index }}
+  changed_when: '"DataStorage"+(index|string) != item.1.stdout'
+  when:
+    - "'boot' not in (item.0.0.partitions | map(attribute='flags') | flatten)"
+  loop: "{{ sd_info.results | subelements('partitions') | zip(cmd.results) }}"
+  loop_control:
+    index_var: index
+
+
+

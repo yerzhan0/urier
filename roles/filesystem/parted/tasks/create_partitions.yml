@@ -1,0 +1,41 @@
+---
+- name: Read devices information
+  include_tasks:
+    read_sd_devices.yml
+
+- name: Clear non boot devices
+  shell: wipefs -a '{{ item.disk.dev }}'
+  when:
+    - "'boot' not in (item.partitions | map(attribute='flags') | flatten)"
+  loop: "{{ sd_info.results }}"
+
+- name: Set partition label
+  community.general.parted: 
+    device: "{{ item.disk.dev }}"
+    label: msdos
+  when:
+    - "'boot' not in (item.partitions | map(attribute='flags') | flatten)"
+  loop: "{{ sd_info.results }}"
+
+- name: Create a one partition for each device to fill half of their space
+  community.general.parted: 
+    device: "{{ item.disk.dev }}"
+    number: 1
+    state: present
+    fs_type: ext4
+    part_end: "50%"
+  when:
+    - "'boot' not in (item.partitions | map(attribute='flags') | flatten)"
+  loop: "{{ sd_info.results }}"
+
+- name: Read devices information
+  include_tasks:
+    read_sd_devices.yml
+
+- name: Create an ext4 filesystem on the new partitions and check disk blocks
+  community.general.filesystem:
+    fstype: ext4
+    dev: '{{ item.0.disk.dev }}{{ item.1.num }}'
+  when:
+    - "'boot' not in (item.0.partitions | map(attribute='flags') | flatten)"
+  loop: "{{ sd_info.results | subelements('partitions') }}"

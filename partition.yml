@@ -1,0 +1,7 @@
+- hosts: home
+  become: yes
+
+  roles:
+    - role: filesystem/parted
+      tags:
+        - parted

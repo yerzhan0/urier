@@ -1,0 +1,31 @@
+
+- name: Mount the data drives
+  mount:
+    name: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: xfs
+    state: mounted
+    passno: "2"
+  with_items: "{{ disks }}"
+  when: disks[0] is defined
+
+- name: Mount the cache drives
+  mount:
+    name: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: ext4
+    state: mounted
+    opts: defaults,discard
+    passno: "2"
+  with_items: "{{ cache_disks }}"
+  when: cache_disks[0] is defined
+
+- name: Mount the parity drives
+  mount:
+    name: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: xfs
+    state: mounted
+    passno: "2"
+  with_items: "{{ parity_disks }}"
+  when: parity_disks[0] is defined

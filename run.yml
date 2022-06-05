@@ -1,0 +1,13 @@
+- hosts: home
+  become: yes
+  
+  roles:
+    - role: system
+      tags:
+        - system
+    
+    - role: docker
+      tags:
+        - docker
+
+  
